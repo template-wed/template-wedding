@@ -183,11 +183,11 @@ const ProfileCard = ({ name, fullName, parents, ig, img }) => (
     viewport={{ once: true }} 
     className="flex flex-col items-center"
   >
-    <div className="relative mb-8">
-      <div className="w-56 h-72 rounded-t-full overflow-hidden border-8 border-white shadow-2xl relative z-10">
+    <div className="relative mb-8 text-center">
+      <div className="w-56 h-72 rounded-t-full overflow-hidden border-8 border-white shadow-2xl relative z-10 mx-auto">
         <img src={img} alt={name} className="w-full h-full object-cover" />
       </div>
-      <div className="absolute -bottom-4 -right-4 w-56 h-72 border-2 border-amber-200 rounded-t-full -z-0"></div>
+      <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-56 h-72 border-2 border-amber-200 rounded-t-full -z-0"></div>
     </div>
     <h3 className="text-4xl font-serif text-amber-900 mb-2 italic">{name}</h3>
     <p className="font-bold text-slate-800 mb-3 px-6 text-lg tracking-tight">{fullName}</p>
@@ -209,7 +209,8 @@ const AdminDashboard = ({ onLogout }) => {
 
   const generateLink = () => {
     if (!guestName) return;
-    const baseUrl = window.location.origin;
+    // Menggunakan origin dan pathname agar URL tetap bersih (tanpa hash admin di link bagi)
+    const baseUrl = window.location.origin + window.location.pathname;
     const url = `${baseUrl}?to=${encodeURIComponent(guestName.trim())}`;
     setGeneratedLink(url);
   };
@@ -246,12 +247,12 @@ const AdminDashboard = ({ onLogout }) => {
         </header>
 
         <main className="space-y-6">
-          <section className="bg-white p-8 rounded-[3rem] shadow-lg border border-amber-100">
-            <h2 className="text-lg font-bold mb-6 flex items-center gap-3 text-amber-900">
+          <section className="bg-white p-8 rounded-[3rem] shadow-lg border border-amber-100 text-center">
+            <h2 className="text-lg font-bold mb-6 flex items-center justify-center gap-3 text-amber-900">
               <Send size={20} className="text-amber-600" />
               Bagi Undangan
             </h2>
-            <div className="space-y-4">
+            <div className="space-y-4 text-left">
               <div className="space-y-2">
                 <label className="text-[10px] uppercase tracking-widest font-bold text-amber-700 ml-2">Nama Tamu Undangan</label>
                 <div className="relative">
@@ -322,17 +323,26 @@ export default function App() {
 
   // Routing & URL Params
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const to = params.get('to');
-    if (to) {
-      const decoded = decodeURIComponent(to);
-      setGuestName(decoded);
-      setForm(prev => ({ ...prev, name: decoded }));
-    }
+    const checkRoute = () => {
+      const params = new URLSearchParams(window.location.search);
+      const to = params.get('to');
+      if (to) {
+        const decoded = decodeURIComponent(to);
+        setGuestName(decoded);
+        setForm(prev => ({ ...prev, name: decoded }));
+      }
 
-    if (window.location.pathname.includes('/admin-dashboard')) {
-      setCurrentPage('admin-login');
-    }
+      // Gunakan URL Hash untuk menghindari 404 Not Found di Netlify/Hosting
+      if (window.location.hash === '#admin-dashboard') {
+        setCurrentPage('admin-login');
+      } else {
+        setCurrentPage('invitation');
+      }
+    };
+
+    checkRoute();
+    window.addEventListener('hashchange', checkRoute);
+    return () => window.removeEventListener('hashchange', checkRoute);
   }, []);
 
   // Firebase Auth
@@ -383,6 +393,11 @@ export default function App() {
     }
   };
 
+  const logoutAdmin = () => {
+    window.location.hash = '';
+    setCurrentPage('invitation');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!db || !user || isSubmitting) return;
@@ -419,7 +434,7 @@ export default function App() {
 
   // --- RENDER SWITCHER ---
   if (currentPage === 'admin-dashboard') {
-    return <AdminDashboard onLogout={() => setCurrentPage('invitation')} />;
+    return <AdminDashboard onLogout={logoutAdmin} />;
   }
 
   if (currentPage === 'admin-login') {
@@ -427,8 +442,8 @@ export default function App() {
       <div className="min-h-screen bg-[#fdfaf5] flex items-center justify-center p-6 font-sans text-center">
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-sm w-full bg-white p-10 rounded-[3rem] shadow-2xl border border-amber-100">
           <Lock className="mx-auto text-amber-600 mb-6" size={48} />
-          <h1 className="text-2xl font-bold text-amber-950 mb-2">Admin Login</h1>
-          <p className="text-xs text-amber-600/60 mb-8 font-medium">Dashboard Management Undangan</p>
+          <h1 className="text-2xl font-bold text-amber-950 mb-2 text-center">Admin Login</h1>
+          <p className="text-xs text-amber-600/60 mb-8 font-medium text-center">Dashboard Management Undangan</p>
           <form onSubmit={handleAdminLogin} className="space-y-6 text-left">
             <div className="space-y-2">
               <label className="text-[10px] uppercase tracking-widest font-bold text-amber-800 ml-2">Email</label>
@@ -438,9 +453,9 @@ export default function App() {
               <label className="text-[10px] uppercase tracking-widest font-bold text-amber-800 ml-2">Password</label>
               <input type="password" value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full p-5 rounded-2xl bg-amber-50 border-none text-sm focus:ring-2 focus:ring-amber-200" required />
             </div>
-            {loginError && <p className="text-rose-500 text-center text-[10px] font-bold uppercase tracking-widest leading-relaxed">{loginError}</p>}
+            {loginError && <p className="text-rose-500 text-center text-[10px] font-bold uppercase tracking-widest leading-relaxed text-center">{loginError}</p>}
             <button type="submit" className="w-full py-5 bg-amber-900 text-white rounded-2xl font-bold uppercase tracking-widest text-[10px] shadow-xl active:scale-95 transition-all">Masuk</button>
-            <button type="button" onClick={() => setCurrentPage('invitation')} className="w-full text-amber-400 text-[9px] font-bold uppercase tracking-widest mt-2">Kembali ke Undangan</button>
+            <button type="button" onClick={() => { window.location.hash = ''; }} className="w-full text-amber-400 text-[9px] font-bold uppercase tracking-widest mt-2 text-center">Kembali ke Undangan</button>
           </form>
         </motion.div>
       </div>
@@ -452,7 +467,7 @@ export default function App() {
       <audio ref={audioRef} loop src="/music/play.mp3" />
 
       {/* Hidden Door to Admin (Top Edge) */}
-      <div onClick={() => setCurrentPage('admin-login')} className="fixed top-0 left-0 w-full h-1 z-[200] opacity-0 cursor-default"></div>
+      <div onClick={() => { window.location.hash = 'admin-dashboard'; }} className="fixed top-0 left-0 w-full h-1 z-[200] opacity-0 cursor-default"></div>
 
       {isOpen && (
         <button 
@@ -476,18 +491,18 @@ export default function App() {
             className="fixed inset-0 z-[100] flex flex-col items-center justify-between text-center p-10 bg-cover bg-center"
             style={{ backgroundImage: 'linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=2070&auto=format&fit=crop)' }}
           >
-            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
-              <h2 className="text-sm uppercase tracking-[0.8em] mb-4 text-amber-200 font-bold">The Wedding of</h2>
-              <h1 className="text-6xl md:text-8xl font-serif text-white drop-shadow-2xl italic">Naya & Tegar</h1>
+            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="text-center">
+              <h2 className="text-sm uppercase tracking-[0.8em] mb-4 text-amber-200 font-bold text-center">The Wedding of</h2>
+              <h1 className="text-6xl md:text-8xl font-serif text-white drop-shadow-2xl italic text-center">Naya & Tegar</h1>
             </motion.div>
 
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }} className="mb-10 w-full max-w-sm text-center">
               <div className="bg-white/10 backdrop-blur-md p-8 rounded-[3rem] border border-white/20 shadow-2xl text-white">
-                <p className="text-xs opacity-80 mb-4 tracking-widest uppercase font-medium italic">Kepada Yth. Bapak/Ibu/Saudara/i:</p>
-                <h3 className="text-3xl font-serif mb-8 text-amber-100 italic">{guestName}</h3>
+                <p className="text-xs opacity-80 mb-4 tracking-widest uppercase font-medium italic text-center">Kepada Yth. Bapak/Ibu/Saudara/i:</p>
+                <h3 className="text-3xl font-serif mb-8 text-amber-100 italic text-center">{guestName}</h3>
                 <button 
                   onClick={handleOpenInvitation}
-                  className="w-full bg-amber-100 text-amber-950 py-5 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-white transition-all shadow-xl uppercase tracking-[0.3em] text-[10px] active:scale-95"
+                  className="w-full bg-amber-100 text-amber-950 py-5 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-white transition-all shadow-xl uppercase tracking-[0.3em] text-[10px] active:scale-95 mx-auto"
                 >
                   <Send size={18} /> Buka Undangan
                 </button>
@@ -509,12 +524,12 @@ export default function App() {
             <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 1 }} className="relative z-10 text-center">
               <DecorativeBorder />
               <h2 className="text-[11px] tracking-[0.5em] uppercase mb-6 text-amber-700 font-bold text-center">Walimatul 'Ursy</h2>
-              <h1 className="text-7xl font-serif text-amber-900 mb-6 italic leading-tight text-center text-center text-center">Naya <br/>&<br/> Tegar</h1>
+              <h1 className="text-7xl font-serif text-amber-900 mb-6 italic leading-tight text-center">Naya <br/>&<br/> Tegar</h1>
               <p className="text-amber-800 font-bold tracking-[0.5em] uppercase text-sm text-center">17 JANUARI 2026</p>
               <DecorativeBorder />
-              <div className="mt-10 px-8 text-center text-center">
-                <p className="text-xs text-slate-500 italic leading-relaxed text-center italic text-center">"{WEDDING_DATA.quotes}"</p>
-                <p className="text-[10px] mt-4 font-bold text-amber-800 uppercase tracking-widest text-center text-center">— {WEDDING_DATA.surah}</p>
+              <div className="mt-10 px-8 text-center">
+                <p className="text-xs text-slate-500 italic leading-relaxed text-center italic">"{WEDDING_DATA.quotes}"</p>
+                <p className="text-[10px] mt-4 font-bold text-amber-800 uppercase tracking-widest text-center">— {WEDDING_DATA.surah}</p>
               </div>
             </motion.div>
           </section>
@@ -536,12 +551,12 @@ export default function App() {
                 {WEDDING_DATA.events.map((ev, i) => (
                   <motion.div key={i} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="bg-white/10 backdrop-blur-md p-10 rounded-[3rem] border border-white/20 shadow-inner">
                     <h3 className="text-3xl font-serif mb-8 text-amber-100 italic text-center">{ev.title}</h3>
-                    <div className="space-y-6 text-xs font-medium tracking-[0.2em] uppercase text-center text-center text-center">
-                      <div className="flex flex-col items-center gap-3 text-center text-center text-center"><Calendar size={24} className="text-amber-300" /><span>{ev.date}</span></div>
-                      <div className="flex flex-col items-center gap-3 text-center text-center text-center"><Clock size={24} className="text-amber-300" /><span>{ev.time}</span></div>
-                      <div className="flex flex-col items-center gap-3 px-6 text-center text-center text-center"><MapPin size={24} className="text-amber-300" /><span className="leading-relaxed text-center">{ev.location}</span><p className="text-[10px] opacity-60 normal-case tracking-normal italic mt-2 text-center text-center text-center">{ev.address}</p></div>
+                    <div className="space-y-6 text-xs font-medium tracking-[0.2em] uppercase text-center">
+                      <div className="flex flex-col items-center gap-3 text-center"><Calendar size={24} className="text-amber-300" /><span>{ev.date}</span></div>
+                      <div className="flex flex-col items-center gap-3 text-center"><Clock size={24} className="text-amber-300" /><span>{ev.time}</span></div>
+                      <div className="flex flex-col items-center gap-3 px-6 text-center"><MapPin size={24} className="text-amber-300" /><span className="leading-relaxed text-center">{ev.location}</span><p className="text-[10px] opacity-60 normal-case tracking-normal italic mt-2 text-center">{ev.address}</p></div>
                     </div>
-                    <button className="mt-10 w-full py-4 bg-amber-100 text-amber-950 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-white transition-all text-[10px] tracking-widest uppercase shadow-xl active:scale-95 text-center text-center text-center">
+                    <button className="mt-10 w-full py-4 bg-amber-100 text-amber-950 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-white transition-all text-[10px] tracking-widest uppercase shadow-xl active:scale-95 text-center mx-auto">
                       <MapPin size={16} /> Buka Google Maps
                     </button>
                   </motion.div>
@@ -551,16 +566,16 @@ export default function App() {
           </section>
 
           <section className="py-24 px-8 bg-[#fdfaf5] text-center">
-             <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}>
+             <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center">
                 <Gift size={40} className="mx-auto text-amber-700 mb-6 text-center" />
-                <h2 className="text-4xl font-serif mb-4 text-amber-900 italic text-center text-center">Wedding Gift</h2>
-                <div className="space-y-6 mt-12 text-center text-center text-center">
+                <h2 className="text-4xl font-serif mb-4 text-amber-900 italic text-center">Wedding Gift</h2>
+                <div className="space-y-6 mt-12 text-center">
                     {WEDDING_DATA.bankAccounts.map((acc, i) => (
-                        <div key={i} className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-amber-100 flex flex-col items-center">
-                            <span className="text-[11px] font-bold text-amber-800 bg-amber-50 px-5 py-2 rounded-full mb-4 uppercase tracking-widest text-center text-center text-center">Bank {acc.bank}</span>
-                            <span className="text-2xl font-serif text-slate-800 mb-1 tracking-wider text-center text-center text-center">{acc.number}</span>
-                            <span className="text-[10px] uppercase text-slate-400 mb-6 tracking-[0.3em] font-bold text-center text-center text-center">A.N {acc.owner}</span>
-                            <button onClick={() => copyText(acc.number)} className="flex items-center gap-2 text-[10px] font-bold text-amber-900 border border-amber-200 px-8 py-3 rounded-full hover:bg-amber-50 transition-all uppercase tracking-widest text-center text-center text-center"><Copy size={14} /> Salin Rekening</button>
+                        <div key={i} className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-amber-100 flex flex-col items-center text-center">
+                            <span className="text-[11px] font-bold text-amber-800 bg-amber-50 px-5 py-2 rounded-full mb-4 uppercase tracking-widest text-center">Bank {acc.bank}</span>
+                            <span className="text-2xl font-serif text-slate-800 mb-1 tracking-wider text-center">{acc.number}</span>
+                            <span className="text-[10px] uppercase text-slate-400 mb-6 tracking-[0.3em] font-bold text-center">A.N {acc.owner}</span>
+                            <button onClick={() => copyText(acc.number)} className="flex items-center gap-2 text-[10px] font-bold text-amber-900 border border-amber-200 px-8 py-3 rounded-full hover:bg-amber-50 transition-all uppercase tracking-widest text-center mx-auto"><Copy size={14} /> Salin Rekening</button>
                         </div>
                     ))}
                 </div>
@@ -568,40 +583,40 @@ export default function App() {
           </section>
 
           <section className="py-24 px-8 bg-white text-center">
-            <div className="flex flex-col items-center mb-12 text-center text-center text-center">
+            <div className="flex flex-col items-center mb-12 text-center">
                 <MessageCircle size={40} className="text-amber-700 mb-6 text-center" />
-                <h2 className="text-4xl font-serif text-amber-900 italic text-center text-center text-center text-center text-center">Guest Book</h2>
-                <div className="w-12 h-1 bg-amber-400 mt-2 rounded-full"></div>
+                <h2 className="text-4xl font-serif text-amber-900 italic text-center">Guest Book</h2>
+                <div className="w-12 h-1 bg-amber-400 mt-2 rounded-full mx-auto"></div>
             </div>
             {!isFirebaseConnected && (
-              <div className="p-6 bg-amber-50 border border-amber-100 text-amber-800 rounded-3xl mb-10 flex gap-4 shadow-sm items-center text-center"><Info size={24} className="shrink-0 text-center" /><div className="text-[11px] leading-relaxed tracking-wide font-medium text-left">Fitur buku tamu akan aktif secara otomatis setelah Firebase dikonfigurasi.</div></div>
+              <div className="p-6 bg-amber-50 border border-amber-200 text-amber-800 rounded-3xl mb-10 flex gap-4 shadow-sm items-center text-center"><Info size={24} className="shrink-0 text-center" /><div className="text-[11px] leading-relaxed tracking-wide font-medium text-left">Fitur buku tamu akan aktif secara otomatis setelah Firebase dikonfigurasi.</div></div>
             )}
-            <form onSubmit={handleSubmit} className="space-y-6 mb-20 bg-[#fdfaf5] p-8 rounded-[3rem] border border-amber-100 shadow-inner text-left text-center">
-              <div className="space-y-2 text-left text-left text-left"><label className="text-[10px] uppercase tracking-widest font-bold text-amber-800 ml-4">Nama</label><input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Nama..." className="w-full p-5 rounded-2xl border-none text-xs shadow-sm focus:ring-2 focus:ring-amber-200 bg-white" required /></div>
-              <div className="space-y-2 text-left text-left text-left"><label className="text-[10px] uppercase tracking-widest font-bold text-amber-800 ml-4">Kehadiran</label><select value={form.status} onChange={e => setForm({...form, status: e.target.value})} className="w-full p-5 rounded-2xl border-none text-xs shadow-sm focus:ring-2 focus:ring-amber-200 appearance-none bg-white"><option value="Hadir">Hadir</option><option value="Tidak Hadir">Tidak Hadir</option></select></div>
-              <div className="space-y-2 text-left text-left text-left"><label className="text-[10px] uppercase tracking-widest font-bold text-amber-800 ml-4">Ucapan</label><textarea value={form.message} onChange={e => setForm({...form, message: e.target.value})} placeholder="Tulis ucapan..." className="w-full p-5 rounded-2xl border-none text-xs shadow-sm focus:ring-2 focus:ring-amber-200 bg-white" rows={5} required /></div>
-              <button disabled={isSubmitting || !isFirebaseConnected} className="w-full py-5 bg-amber-900 text-white rounded-2xl font-bold uppercase tracking-[0.3em] text-[10px] shadow-2xl transition-all active:scale-95 disabled:opacity-30 text-center text-center">
+            <form onSubmit={handleSubmit} className="space-y-6 mb-20 bg-[#fdfaf5] p-8 rounded-[3rem] border border-amber-100 shadow-inner text-left">
+              <div className="space-y-2"><label className="text-[10px] uppercase tracking-widest font-bold text-amber-800 ml-4">Nama</label><input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Nama..." className="w-full p-5 rounded-2xl border-none text-xs shadow-sm focus:ring-2 focus:ring-amber-200 bg-white" required /></div>
+              <div className="space-y-2"><label className="text-[10px] uppercase tracking-widest font-bold text-amber-800 ml-4">Kehadiran</label><select value={form.status} onChange={e => setForm({...form, status: e.target.value})} className="w-full p-5 rounded-2xl border-none text-xs shadow-sm focus:ring-2 focus:ring-amber-200 appearance-none bg-white"><option value="Hadir">Hadir</option><option value="Tidak Hadir">Tidak Hadir</option></select></div>
+              <div className="space-y-2"><label className="text-[10px] uppercase tracking-widest font-bold text-amber-800 ml-4">Ucapan</label><textarea value={form.message} onChange={e => setForm({...form, message: e.target.value})} placeholder="Tulis ucapan..." className="w-full p-5 rounded-2xl border-none text-xs shadow-sm focus:ring-2 focus:ring-amber-200 bg-white" rows={5} required /></div>
+              <button disabled={isSubmitting || !isFirebaseConnected} className="w-full py-5 bg-amber-900 text-white rounded-2xl font-bold uppercase tracking-[0.3em] text-[10px] shadow-2xl transition-all active:scale-95 disabled:opacity-30 text-center">
                   {isSubmitting ? "Mengirim..." : "Kirim Pesan"}
               </button>
             </form>
-            <div className="space-y-8 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar text-left text-left text-left text-left text-left">
-              {messages.length === 0 ? (<div className="text-center text-slate-300 py-16 italic text-sm font-light text-center text-center text-center text-center text-center">{isFirebaseConnected ? "Belum ada ucapan." : "Fitur pesan sedang disiapkan..."}</div>) : (
+            <div className="space-y-8 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar text-left">
+              {messages.length === 0 ? (<div className="text-center text-slate-300 py-16 italic text-sm font-light text-center">{isFirebaseConnected ? "Belum ada ucapan." : "Fitur pesan sedang disiapkan..."}</div>) : (
                 messages.map(m => (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} key={m.id} className="p-8 bg-[#fdfaf5] rounded-[2.5rem] border border-amber-100 shadow-sm relative text-left text-left text-left text-left text-left">
-                    <div className="flex justify-between items-center mb-5"><div className="flex flex-col text-left text-left text-left text-left text-left"><span className="font-bold text-amber-900 text-sm">{m.name}</span><span className="text-[9px] text-slate-400 font-medium">{m.createdAt?.toDate ? m.createdAt.toDate().toLocaleDateString('id-ID', { hour: '2-digit', minute: '2-digit' }) : 'Baru saja'}</span></div><span className={`text-[9px] font-bold uppercase tracking-widest px-4 py-2 rounded-full ${m.status === 'Hadir' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>{m.status}</span></div>
-                    <p className="text-sm text-slate-600 italic leading-relaxed text-left text-left text-left text-left text-left text-left">"{m.message}"</p>
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} key={m.id} className="p-8 bg-[#fdfaf5] rounded-[2.5rem] border border-amber-100 shadow-sm relative text-left">
+                    <div className="flex justify-between items-center mb-5"><div className="flex flex-col text-left"><span className="font-bold text-amber-900 text-sm">{m.name}</span><span className="text-[9px] text-slate-400 font-medium">{m.createdAt?.toDate ? m.createdAt.toDate().toLocaleDateString('id-ID', { hour: '2-digit', minute: '2-digit' }) : 'Baru saja'}</span></div><span className={`text-[9px] font-bold uppercase tracking-widest px-4 py-2 rounded-full ${m.status === 'Hadir' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>{m.status}</span></div>
+                    <p className="text-sm text-slate-600 italic leading-relaxed text-left">"{m.message}"</p>
                   </motion.div>
                 ))
               )}
             </div>
           </section>
 
-          <footer className="p-20 bg-amber-950 text-white text-center rounded-t-[5rem] mt-10 shadow-inner relative overflow-hidden text-center text-center text-center text-center text-center">
-            <Heart className="mx-auto text-amber-400 mb-10 w-12 h-12 text-center fill-amber-400 text-center" />
-            <h2 className="text-4xl font-serif mb-8 text-amber-100 italic text-center leading-tight text-center text-center">Terima Kasih</h2>
-            <p className="text-[11px] opacity-70 mb-20 leading-relaxed px-10 uppercase tracking-[0.4em] font-light text-center text-center text-center text-center text-center">Atas kehadiran dan doa restu Bapak/Ibu/Saudara/i</p>
-            <div className="flex items-center justify-center gap-6 text-amber-200 font-serif text-5xl italic text-center text-center text-center text-center text-center text-center"><span>Naya</span><div className="w-2 h-2 rounded-full bg-amber-500" /><span>Tegar</span></div>
-            <div className="mt-24 pt-10 border-t border-white/10 opacity-30 text-[9px] tracking-[0.6em] uppercase font-bold text-center text-center text-center text-center text-center text-center">Created with Heart • 2026</div>
+          <footer className="p-20 bg-amber-950 text-white text-center rounded-t-[5rem] mt-10 shadow-inner relative overflow-hidden text-center">
+            <Heart className="mx-auto text-amber-400 mb-10 w-12 h-12 text-center fill-amber-400 mx-auto" />
+            <h2 className="text-4xl font-serif mb-8 text-amber-100 italic text-center leading-tight">Terima Kasih</h2>
+            <p className="text-[11px] opacity-70 mb-20 leading-relaxed px-10 uppercase tracking-[0.4em] font-light text-center">Atas kehadiran dan doa restu Bapak/Ibu/Saudara/i</p>
+            <div className="flex items-center justify-center gap-6 text-amber-200 font-serif text-5xl italic text-center"><span>Naya</span><div className="w-2 h-2 rounded-full bg-amber-500" /><span>Tegar</span></div>
+            <div className="mt-24 pt-10 border-t border-white/10 opacity-30 text-[9px] tracking-[0.6em] uppercase font-bold text-center">Created with Heart • 2026</div>
           </footer>
         </main>
       )}
