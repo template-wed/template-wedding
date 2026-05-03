@@ -1,0 +1,16 @@
+// src/config/firebase.js
+import { initializeApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
+
+// Ganti dengan konfigurasi dari Firebase Console Anda
+const firebaseConfig = {
+  apiKey: "API_KEY_ANDA",
+  authDomain: "PROJECT_ID.firebaseapp.com",
+  projectId: "PROJECT_ID",
+  storageBucket: "PROJECT_ID.appspot.com",
+  messagingSenderId: "SENDER_ID",
+  appId: "APP_ID"
+};
+
+const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
