@@ -10,6 +10,7 @@ import { FaMusic, FaPause } from 'react-icons/fa';
 import Gallery from './components/Gallery';
 import bgMusic from './music/play.mp3';
 import Share from './components/Share';
+import Footer from './components/Footer';
 
 export default function App() {
   const [isOpened, setIsOpened] = useState(false);
@@ -63,7 +64,7 @@ export default function App() {
           <Gallery />
           <LoveGift />
           <Wishes />
-          
+          <Footer />
           {/* Floating Music Button */}
           <button 
             onClick={toggleMusic}
