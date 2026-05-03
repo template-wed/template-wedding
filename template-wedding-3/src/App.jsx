@@ -1,5 +1,5 @@
 // src/App.jsx
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Cover from './components/Cover';
 import Quote from './components/Quote';
 import Profile from './components/Profile';
@@ -9,11 +9,28 @@ import LoveGift from './components/LoveGift';
 import { FaMusic, FaPause } from 'react-icons/fa';
 import Gallery from './components/Gallery';
 import bgMusic from './music/play.mp3';
+import Share from './components/Share';
 
 export default function App() {
   const [isOpened, setIsOpened] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [currentHash, setCurrentHash] = useState(window.location.hash);
   const audioRef = useRef(null);
+
+  // Listener untuk mendeteksi perubahan hash secara real-time
+  useEffect(() => {
+    const handleHashChange = () => {
+      setCurrentHash(window.location.hash);
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // Jalur khusus untuk halaman generate link WhatsApp
+  if (currentHash === '#bagikan') {
+    return <Share />;
+  }
 
   const handleOpen = () => {
     setIsOpened(true);
